@@ -557,6 +557,10 @@ async function renderSummary() {
           <span class="metric-value">${yen(wkendAvg)}</span>
         </div>
         <div class="metric-cell">
+          <span class="metric-label">来客数</span>
+          <span class="metric-value">${fmt(totalGuests)}人</span>
+        </div>
+        <div class="metric-cell">
           <span class="metric-label">客単価</span>
           <span class="metric-value">${yen(avgUnit)}</span>
         </div>
