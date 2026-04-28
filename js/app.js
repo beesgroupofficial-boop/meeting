@@ -494,9 +494,28 @@ async function renderSummary() {
     const newrateAvg = store === "mash" && allEntries.length
       ? allEntries.reduce((a, e) => a + (e[store]?.newrate || 0), 0) / allEntries.length : null;
 
-    // 残り目標 = 残り日数 × 目標平均（入力済み日数ベース）
-    const wkdayTgt = remWkday > 0 ? remaining / remWkday : 0;
-    const wkendTgt = remWkend > 0 ? remaining / remWkend : 0;
+    // 残り目標: 平日/週末の実績平均の比率から按分して計算
+    // ウェイト = 平均 × 残り日数 で比率を決め、残り金額を按分
+    let wkdayTgt = 0, wkendTgt = 0;
+    const hasWkday = wkdayAvg > 0 && remWkday > 0;
+    const hasWkend = wkendAvg > 0 && remWkend > 0;
+    if (hasWkday && hasWkend) {
+      const weightWkday = wkdayAvg * remWkday;
+      const weightWkend = wkendAvg * remWkend;
+      const totalWeight = weightWkday + weightWkend;
+      const allocWkday = remaining * (weightWkday / totalWeight);
+      const allocWkend = remaining * (weightWkend / totalWeight);
+      wkdayTgt = allocWkday / remWkday;
+      wkendTgt = allocWkend / remWkend;
+    } else if (hasWkday) {
+      wkdayTgt = remaining / remWkday;
+    } else if (hasWkend) {
+      wkendTgt = remaining / remWkend;
+    } else if (remWkday + remWkend > 0) {
+      const perDay = remaining / (remWkday + remWkend);
+      wkdayTgt = remWkday > 0 ? perDay : 0;
+      wkendTgt = remWkend > 0 ? perDay : 0;
+    }
 
     const pc = pctClass(pct);
     const fc = fillClass(pct);
