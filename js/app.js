@@ -473,6 +473,7 @@ async function renderSummary() {
   const cutDay = isCurrentMonth
     ? (todayEntered ? now.getDate() + 1 : now.getDate())
     : new Date(sumYear, sumMonth, 0).getDate() + 1;
+  // remainingDays は cutDay から月末まで（cutDay含む）をカウント
   const { remWkday, remWkend } = remainingDays(sumYear, sumMonth, cutDay);
 
   let html = "";
@@ -494,8 +495,9 @@ async function renderSummary() {
 
     const totalGuests = allEntries.reduce((a, e) => a + (e[store]?.guests || 0), 0);
     const totalGroups = allEntries.reduce((a, e) => a + (e[store]?.groups || 0), 0);
-    const avgUnit = totalGuests > 0 ? total / totalGuests : 0;
-    const avgGUnit = totalGroups > 0 ? total / totalGroups : 0;
+    const totalSalesForUnit = allEntries.reduce((a, e) => a + (e[store]?.sales || 0), 0);
+    const avgUnit = totalGuests > 0 ? Math.round(totalSalesForUnit / totalGuests) : 0;
+    const avgGUnit = totalGroups > 0 ? Math.round(totalSalesForUnit / totalGroups) : 0;
     const newrateAvg = store === "mash" && allEntries.length
       ? allEntries.reduce((a, e) => a + (e[store]?.newrate || 0), 0) / allEntries.length : null;
 
@@ -719,12 +721,19 @@ async function exportExcel() {
     }));
     allData[m] = { entries: enriched, goals: allGoals[m] || {} };
   }
-  const payload = JSON.stringify({ year, currentMonth: state.calMonth, data: allData });
+  const payload = JSON.stringify({ year, currentMonth: state.calMonth, data: allData }, null, 2);
   try {
-    await window.storage.set("export_payload", payload);
-    if (typeof sendPrompt === "function") {
-      sendPrompt(`売上データのExcelファイルを生成してください。ストレージキー "export_payload" にJSONデータが保存されています。`);
-    }
+    // JSONファイルをダウンロード → Claudeに貼り付けてExcel生成を依頼
+    const blob = new Blob([payload], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `sales_${year}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    toast("JSONをダウンロードしました");
   } catch(e) {
     console.error(e);
     toast("エクスポート失敗", "error");
