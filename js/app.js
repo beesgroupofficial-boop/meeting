@@ -203,7 +203,7 @@ function subscribeMonth(year, month) {
 function remainingDays(year, month, cutDay) {
   const days = new Date(year, month, 0).getDate();
   let remWkday = 0, remWkend = 0;
-  for (let d = cutDay + 1; d <= days; d++) {
+  for (let d = cutDay; d <= days; d++) {
     const ds = dateStr(year, month, d);
     if (classifyDay(ds) === "weekend") remWkend++;
     else remWkday++;
@@ -467,7 +467,12 @@ async function renderSummary() {
 
   const now = new Date();
   const isCurrentMonth = sumYear === now.getFullYear() && sumMonth === now.getMonth() + 1;
-  const cutDay = isCurrentMonth ? now.getDate() : new Date(sumYear, sumMonth, 0).getDate();
+  // 今日すでに入力済みなら翌日から、未入力なら今日から残り日数を数える
+  const todayStr = today();
+  const todayEntered = isCurrentMonth && allEntries.some(e => e.date === todayStr && STORES.some(s => (e[s]?.sales || 0) > 0));
+  const cutDay = isCurrentMonth
+    ? (todayEntered ? now.getDate() + 1 : now.getDate())
+    : new Date(sumYear, sumMonth, 0).getDate() + 1;
   const { remWkday, remWkend } = remainingDays(sumYear, sumMonth, cutDay);
 
   let html = "";
