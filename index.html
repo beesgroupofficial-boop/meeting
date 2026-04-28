@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="売上管理">
+  <meta name="theme-color" content="#0f0f0f">
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <title>売上管理</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div id="app">
+    <div id="loading-screen">
+      <div class="loading-logo">売上管理</div>
+      <div class="loading-spinner"></div>
+    </div>
+
+    <!-- Main App -->
+    <div id="main-app" style="display:none;">
+      <!-- Header -->
+      <header class="app-header">
+        <div class="header-left">
+          <span class="header-title" id="header-title">売上管理</span>
+        </div>
+        <div class="header-right">
+          <button class="icon-btn" id="goal-btn" title="目標設定">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
+          </button>
+          <button class="icon-btn" id="export-btn" title="Excel出力">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+          </button>
+        </div>
+      </header>
+
+      <!-- Tab Navigation -->
+      <nav class="tab-nav">
+        <button class="tab-btn active" data-tab="calendar">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          <span>カレンダー</span>
+        </button>
+        <button class="tab-btn" data-tab="summary">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+          <span>サマリー</span>
+        </button>
+        <button class="tab-btn" data-tab="annual">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+          <span>年間</span>
+        </button>
+      </nav>
+
+      <!-- Calendar Tab -->
+      <div id="tab-calendar" class="tab-content active">
+        <div class="calendar-header">
+          <button class="nav-arrow" id="prev-month">&#8249;</button>
+          <div class="month-display" id="month-display"></div>
+          <button class="nav-arrow" id="next-month">&#8250;</button>
+        </div>
+        <div class="calendar-grid" id="calendar-grid"></div>
+        <div class="calendar-legend">
+          <span class="legend-item"><span class="legend-dot entered"></span>入力済み</span>
+          <span class="legend-item"><span class="legend-dot today"></span>今日</span>
+        </div>
+      </div>
+
+      <!-- Summary Tab -->
+      <div id="tab-summary" class="tab-content">
+        <div class="summary-month-nav">
+          <button class="nav-arrow" id="sum-prev">&#8249;</button>
+          <span id="sum-month-label"></span>
+          <button class="nav-arrow" id="sum-next">&#8250;</button>
+        </div>
+        <div id="summary-content"></div>
+      </div>
+
+      <!-- Annual Tab -->
+      <div id="tab-annual" class="tab-content">
+        <div class="annual-year-nav">
+          <button class="nav-arrow" id="ann-prev">&#8249;</button>
+          <span id="ann-year-label"></span>
+          <button class="nav-arrow" id="ann-next">&#8250;</button>
+        </div>
+        <div id="annual-content"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Input Modal -->
+  <div class="modal-overlay" id="input-modal">
+    <div class="modal-sheet">
+      <div class="modal-handle"></div>
+      <div class="modal-header">
+        <h2 id="modal-date-label"></h2>
+        <button class="close-btn" id="close-input-modal">✕</button>
+      </div>
+      <!-- Store Tabs -->
+      <div class="store-tabs">
+        <button class="store-tab active" data-store="bero">ベロベロバー</button>
+        <button class="store-tab" data-store="mash">MASH</button>
+        <button class="store-tab" data-store="bee">Lounge Bee</button>
+      </div>
+      <div class="modal-body" id="modal-body"></div>
+      <div class="modal-footer">
+        <button class="btn-save" id="save-entry-btn">保存する</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Goal Modal -->
+  <div class="modal-overlay" id="goal-modal">
+    <div class="modal-sheet">
+      <div class="modal-handle"></div>
+      <div class="modal-header">
+        <h2>月間目標設定</h2>
+        <button class="close-btn" id="close-goal-modal">✕</button>
+      </div>
+      <div class="modal-body" id="goal-modal-body"></div>
+      <div class="modal-footer">
+        <button class="btn-save" id="save-goal-btn">保存する</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div id="toast" class="toast"></div>
+
+  <!-- Firebase SDK -->
+  <script type="module" src="js/firebase-config.js"></script>
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
