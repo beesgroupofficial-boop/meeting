@@ -370,8 +370,8 @@ async function renderInputForm(store) {
           <input class="form-input" type="number" inputmode="numeric" id="f-guests" value="${sd.guests || ""}" placeholder="0">
         </div>
         <div class="form-group">
-          <label class="form-label">客単価</label>
-          <input class="form-input" type="number" inputmode="numeric" id="f-unit" value="${sd.unit || ""}" placeholder="直接入力">
+          <label class="form-label">客単価（自動）</label>
+          <input class="form-input" id="f-unit" value="${sd.guests > 0 ? Math.round((sd.sales||0)/sd.guests) : ""}" placeholder="自動計算" readonly>
         </div>
       </div>
       <div class="form-row">
@@ -380,8 +380,8 @@ async function renderInputForm(store) {
           <input class="form-input" type="number" inputmode="numeric" id="f-groups" value="${sd.groups || ""}" placeholder="0">
         </div>
         <div class="form-group">
-          <label class="form-label">組単価</label>
-          <input class="form-input" type="number" inputmode="numeric" id="f-gunit" value="${sd.gunit || ""}" placeholder="直接入力">
+          <label class="form-label">組単価（自動）</label>
+          <input class="form-input" id="f-gunit" value="${sd.groups > 0 ? Math.round((sd.sales||0)/sd.groups) : ""}" placeholder="自動計算" readonly>
         </div>
       </div>`;
   } else if (store === "mash") {
@@ -400,26 +400,37 @@ async function renderInputForm(store) {
           <label class="form-label">客単価（自動）</label>
           <input class="form-input" id="f-unit" value="${calcUnit}" placeholder="自動計算" readonly>
         </div>
-      </div>
-      <div class="form-group">
-        <label class="form-label">新規率（%）</label>
-        <input class="form-input" type="number" inputmode="decimal" id="f-newrate" value="${sd.newrate || ""}" placeholder="0.0" step="0.1">
       </div>`;
   }
 
   document.getElementById("modal-body").innerHTML = html;
 
-  if (store === "mash") {
-    const salesEl = document.getElementById("f-sales");
-    const guestsEl = document.getElementById("f-guests");
-    const unitEl = document.getElementById("f-unit");
-    function calc() {
+  // 全店舗: 売上・客数から客単価を自動計算
+  const salesEl = document.getElementById("f-sales");
+  const guestsEl = document.getElementById("f-guests");
+  const unitEl = document.getElementById("f-unit");
+  if (salesEl && guestsEl && unitEl) {
+    function calcUnit() {
       const s = parseFloat(salesEl.value) || 0;
       const g = parseFloat(guestsEl.value) || 0;
       unitEl.value = g > 0 ? Math.round(s / g) : "";
     }
-    salesEl.addEventListener("input", calc);
-    guestsEl.addEventListener("input", calc);
+    salesEl.addEventListener("input", calcUnit);
+    guestsEl.addEventListener("input", calcUnit);
+  }
+  // bero/bee: 売上・組数から組単価を自動計算
+  if (store !== "mash") {
+    const groupsEl = document.getElementById("f-groups");
+    const gunitEl = document.getElementById("f-gunit");
+    if (salesEl && groupsEl && gunitEl) {
+      function calcGUnit() {
+        const s = parseFloat(salesEl.value) || 0;
+        const g = parseFloat(groupsEl.value) || 0;
+        gunitEl.value = g > 0 ? Math.round(s / g) : "";
+      }
+      salesEl.addEventListener("input", calcGUnit);
+      groupsEl.addEventListener("input", calcGUnit);
+    }
   }
 }
 
@@ -432,16 +443,13 @@ async function saveCurrentEntry() {
   let storeData = {};
 
   if (store === "bero" || store === "bee") {
-    const unit = parseFloat(document.getElementById("f-unit")?.value) ||
-      (guests > 0 ? Math.round(sales / guests) : 0);
+    const unit = guests > 0 ? Math.round(sales / guests) : 0;
     const groups = parseFloat(document.getElementById("f-groups")?.value) || 0;
-    const gunit = parseFloat(document.getElementById("f-gunit")?.value) ||
-      (groups > 0 ? Math.round(sales / groups) : 0);
+    const gunit = groups > 0 ? Math.round(sales / groups) : 0;
     storeData = { sales, guests, unit, groups, gunit };
   } else if (store === "mash") {
     const unit = guests > 0 ? Math.round(sales / guests) : 0;
-    const newrate = parseFloat(document.getElementById("f-newrate")?.value) || 0;
-    storeData = { sales, guests, unit, newrate };
+    storeData = { sales, guests, unit };
   }
 
   // 日付の種別を保存
@@ -574,15 +582,10 @@ async function renderSummary() {
           <span class="footer-label">週末目標（残り${remWkend}日）</span>
           <span class="footer-value">${yen(wkendTgt)}/日</span>
         </div>
-        ${store !== "mash" ? `
         <div class="footer-stat">
           <span class="footer-label">組単価</span>
-          <span class="footer-value">${yen(avgGUnit)}</span>
-        </div>` : `
-        <div class="footer-stat">
-          <span class="footer-label">新規率</span>
-          <span class="footer-value">${newrateAvg !== null ? newrateAvg.toFixed(1) + "%" : "-"}</span>
-        </div>`}
+          <span class="footer-value">${store !== "mash" ? yen(avgGUnit) : "-"}</span>
+        </div>
         <div class="footer-stat">
           <span class="footer-label">営業日数</span>
           <span class="footer-value">平日${wkdaySales.length}日・週末${wkendSales.length}日</span>
