@@ -286,7 +286,11 @@ async function updateMonthTotals() {
     document.getElementById("tab-calendar").appendChild(strip);
   }
 
-  strip.innerHTML = STORES.map(s => {
+  const grandTotal = STORES.reduce((a, s) => a + entries.reduce((b, e) => b + (e[s]?.sales || 0), 0), 0);
+  const grandGoal = STORES.reduce((a, s) => a + (goal[s] || 0), 0);
+  const grandPct = grandGoal ? (grandTotal / grandGoal * 100).toFixed(1) : 0;
+
+  const storeCards = STORES.map(s => {
     const total = entries.reduce((a, e) => a + (e[s]?.sales || 0), 0);
     const g = goal[s] || 0;
     const pct = g ? (total / g * 100).toFixed(1) : 0;
@@ -296,6 +300,14 @@ async function updateMonthTotals() {
       <div class="store-mini-pct">${pct}%</div>
     </div>`;
   }).join("");
+
+  strip.innerHTML = `
+    <div class="total-grand-card">
+      <div class="store-mini-name">3店舗合計</div>
+      <div class="store-mini-val" style="font-size:15px;">${yen(grandTotal)}</div>
+      <div class="store-mini-pct">${grandPct}%</div>
+    </div>
+    ${storeCards}`;
 }
 
 // ===== Input Modal =====
